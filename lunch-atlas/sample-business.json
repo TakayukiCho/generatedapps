@@ -1,0 +1,42 @@
+{
+  "source_system": "hotpepper_gourmet_api",
+  "business_name": "サンプル和食店",
+  "address": "東京都港区新橋1-2-3",
+  "industry": {
+    "scheme": "source+jsic",
+    "source_code": "G004",
+    "source_label": "和食",
+    "canonical_code": "7621",
+    "canonical_label": "日本料理店",
+    "confidence": 0.88
+  },
+  "operating_days": {
+    "mon": true,
+    "tue": true,
+    "wed": true,
+    "thu": true,
+    "fri": true,
+    "sat": false,
+    "sun": false
+  },
+  "opening_hours": {
+    "mon": [["11:30", "14:00"], ["17:00", "22:00"]],
+    "tue": [["11:30", "14:00"], ["17:00", "22:00"]],
+    "wed": [["11:30", "14:00"], ["17:00", "22:00"]],
+    "thu": [["11:30", "14:00"], ["17:00", "22:00"]],
+    "fri": [["11:30", "14:00"], ["17:00", "22:00"]],
+    "sat": [],
+    "sun": []
+  },
+  "contact": {
+    "phone": "03-1234-5678",
+    "url": "https://www.hotpepper.jp/strJ000000000/"
+  },
+  "source_url": "https://example.invalid/hotpepper-record",
+  "last_updated_timestamp": "2026-06-09T00:00:00+09:00",
+  "license_or_terms": "Recruit Web Service terms",
+  "provenance": {
+    "hours_raw_open": "月〜金 11:30〜14:00 / 17:00〜22:00",
+    "hours_raw_close": "土・日"
+  }
+}

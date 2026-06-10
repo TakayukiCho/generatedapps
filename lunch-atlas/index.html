@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lunch Atlas</title>
+  <style>
+    :root {
+      --ink: #241c18;
+      --muted: #6d625a;
+      --line: rgba(52, 38, 28, 0.12);
+      --panel: rgba(255, 249, 241, 0.78);
+      --panel-strong: rgba(255, 252, 247, 0.92);
+      --accent: #d96040;
+      --accent-deep: #8d3425;
+      --leaf: #2f6f58;
+      --gold: #dfa946;
+      --berry: #8c4b66;
+      --bg-a: #f6ecdd;
+      --bg-b: #f4e7d3;
+      --shadow: 0 24px 72px rgba(80, 52, 24, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Avenir Next", "Hiragino Sans", "Yu Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(217, 96, 64, 0.18), transparent 24%),
+        radial-gradient(circle at 85% 12%, rgba(140, 75, 102, 0.14), transparent 20%),
+        radial-gradient(circle at 88% 82%, rgba(47, 111, 88, 0.14), transparent 22%),
+        linear-gradient(160deg, var(--bg-a) 0%, #fbf4ea 44%, var(--bg-b) 100%);
+      min-height: 100vh;
+    }
+
+    .page {
+      width: min(100vw, 760px);
+      margin: 0 auto;
+      padding: 14px 14px 28px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .filter-spacer {
+      height: 0;
+      pointer-events: none;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
+    }
+
+    .filter-panel,
+    .results-panel {
+      padding: 18px;
+    }
+
+    .filter-panel {
+      position: fixed;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      width: min(calc(100vw - 28px), 760px);
+      z-index: 20;
+      padding: 10px 12px 12px;
+      background:
+        linear-gradient(180deg, rgba(255, 251, 246, 0.98), rgba(250, 242, 232, 0.94));
+      border-radius: 0 0 24px 24px;
+      border-top: 0;
+      box-shadow: 0 12px 28px rgba(80, 52, 24, 0.12);
+    }
+
+    .filter-shell {
+      display: grid;
+      gap: 10px;
+    }
+
+    .filter-shell::before {
+      content: "";
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(52, 38, 28, 0.12), transparent);
+      order: 1;
+    }
+
+    .filter-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 10px 10px;
+      border: 0;
+      border-radius: 14px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 248, 240, 0.88));
+      color: var(--ink);
+      cursor: pointer;
+      box-shadow: inset 0 -1px 0 rgba(52, 38, 28, 0.08);
+      order: 0;
+    }
+
+    .filter-toggle-main {
+      display: grid;
+      gap: 6px;
+      text-align: left;
+      min-width: 0;
+    }
+
+    .filter-toggle-summary {
+      font-size: 0.88rem;
+      color: var(--ink);
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .filter-toggle-icon {
+      flex: 0 0 auto;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(217, 96, 64, 0.14);
+      color: var(--accent-deep);
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: transform 120ms ease;
+    }
+
+    .filter-panel.is-collapsed .filter-toggle-icon {
+      transform: rotate(0deg);
+    }
+
+    .filter-panel:not(.is-collapsed) .filter-toggle-icon {
+      transform: rotate(180deg);
+    }
+
+    .filter-toggle-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .filter-mini-pill {
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(217, 96, 64, 0.1);
+      color: var(--accent-deep);
+      font-size: 0.76rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .filter-panel.is-collapsed {
+      backdrop-filter: blur(20px);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 0.96rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--accent-deep);
+    }
+
+    .note {
+      font-size: 0.79rem;
+      color: var(--muted);
+    }
+
+    .filter-grid {
+      display: grid;
+      gap: 14px;
+      padding-top: 2px;
+      order: 2;
+    }
+
+    .filter-panel.is-collapsed .filter-grid {
+      display: none;
+    }
+
+    .genre-filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .genre-filter-button {
+      min-height: 40px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(52, 38, 28, 0.08);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      font-size: 0.83rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+    }
+
+    .genre-filter-button.is-active {
+      background: rgba(217, 96, 64, 0.14);
+      color: var(--accent-deep);
+      border-color: rgba(217, 96, 64, 0.24);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(217, 96, 64, 0.14);
+    }
+
+    .genre-filter-button:focus-visible {
+      outline: 2px solid rgba(217, 96, 64, 0.45);
+      outline-offset: 2px;
+    }
+
+    .slider-block {
+      padding: 14px;
+      border-radius: 18px;
+      background: var(--panel-strong);
+      border: 1px solid rgba(52, 38, 28, 0.06);
+    }
+
+    .slider-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+
+    .slider-top strong {
+      font-size: 0.95rem;
+    }
+
+    .slider-value {
+      min-width: 34px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(217, 96, 64, 0.12);
+      color: var(--accent-deep);
+      font-size: 0.79rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      appearance: none;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(52, 38, 28, 0.1);
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--gold));
+      border: 2px solid white;
+      box-shadow: 0 4px 12px rgba(217, 96, 64, 0.22);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--gold));
+      border: 2px solid white;
+      box-shadow: 0 4px 12px rgba(217, 96, 64, 0.22);
+      cursor: pointer;
+    }
+
+    .card-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .restaurant-card {
+      padding: 16px;
+      border-radius: 20px;
+      background: var(--panel-strong);
+      border: 1px solid rgba(52, 38, 28, 0.06);
+    }
+
+    .card-head,
+    .card-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .name {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .blend {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .score-block {
+      display: grid;
+      gap: 8px;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 68px 1fr 26px;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .track {
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(52, 38, 28, 0.08);
+    }
+
+    .track span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .healthy .track span { background: linear-gradient(90deg, #4d9c73, #9ecf8d); }
+    .price .track span { background: linear-gradient(90deg, #d58f37, #efc46c); }
+    .taste .track span { background: linear-gradient(90deg, #9d4d68, #d77c92); }
+
+    .card-head {
+      align-items: start;
+      margin-bottom: 12px;
+    }
+
+    .rank {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(217, 96, 64, 0.12);
+      color: var(--accent-deep);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(47, 111, 88, 0.1);
+      color: var(--leaf);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .card-foot {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(52, 38, 28, 0.12);
+      align-items: baseline;
+    }
+
+    .empty-state {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px dashed rgba(52, 38, 28, 0.16);
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    @media (min-width: 720px) {
+      .page {
+        padding: 18px 18px 32px;
+      }
+
+      .card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="stack">
+      <div class="filter-spacer" id="filter-spacer" aria-hidden="true"></div>
+
+      <section class="filter-panel panel">
+        <div class="filter-shell">
+          <button id="filter-toggle" class="filter-toggle" type="button" aria-expanded="false" aria-controls="filter-grid">
+            <div class="filter-toggle-main">
+              <span class="filter-toggle-summary" id="filter-toggle-summary">ジャンル: すべて</span>
+              <div class="filter-toggle-pills" id="filter-toggle-pills"></div>
+            </div>
+            <span class="filter-toggle-icon">▾</span>
+          </button>
+
+          <div class="filter-grid" id="filter-grid">
+            <div class="genre-filter-row" id="genre-filter-row" aria-label="ジャンル絞り込み"></div>
+
+            <label class="slider-block">
+              <div class="slider-top">
+                <strong>Healthy</strong>
+                <span class="slider-value" id="healthy-value">1+</span>
+              </div>
+              <input id="healthy-filter" type="range" min="1" max="5" step="1" value="1">
+            </label>
+
+            <label class="slider-block">
+              <div class="slider-top">
+                <strong>Price</strong>
+                <span class="slider-value" id="price-value">1+</span>
+              </div>
+              <input id="price-filter" type="range" min="1" max="5" step="1" value="1">
+            </label>
+
+            <label class="slider-block">
+              <div class="slider-top">
+                <strong>Taste</strong>
+                <span class="slider-value" id="taste-value">1+</span>
+              </div>
+              <input id="taste-filter" type="range" min="1" max="5" step="1" value="1">
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="results-panel panel">
+        <div class="section-head">
+          <div>
+            <h2>Restaurant Deck</h2>
+            <div class="note">taste 45 / healthy 30 / price 25 の重みで並び替え</div>
+          </div>
+        </div>
+        <div class="card-grid" id="card-grid"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="./restaurants-data.js"></script>
+  <script>
+    const restaurants = window.RESTAURANTS || [];
+    const filters = {
+      healthy: 1,
+      price: 1,
+      taste: 1,
+      genres: new Set()
+    };
+
+    const healthyInput = document.getElementById("healthy-filter");
+    const priceInput = document.getElementById("price-filter");
+    const tasteInput = document.getElementById("taste-filter");
+    const filterPanel = document.querySelector(".filter-panel");
+    const filterSpacer = document.getElementById("filter-spacer");
+    const filterToggle = document.getElementById("filter-toggle");
+    const filterToggleSummary = document.getElementById("filter-toggle-summary");
+    const filterTogglePills = document.getElementById("filter-toggle-pills");
+    const genreFilterRow = document.getElementById("genre-filter-row");
+    const allGenres = [...new Set(restaurants.flatMap((item) => item.genre))].sort((a, b) => a.localeCompare(b, "ja"));
+    let lastScrollY = window.scrollY;
+    let autoCloseLockedUntil = 0;
+
+    function setFilterCollapsed(collapsed) {
+      filterPanel.classList.toggle("is-collapsed", collapsed);
+      filterToggle.setAttribute("aria-expanded", String(!collapsed));
+      updateFilterSpace();
+    }
+
+    function updateFilterSpace() {
+      filterSpacer.style.height = `${filterPanel.offsetHeight}px`;
+    }
+
+    function scoreWidth(score) {
+      return `${(score / 5) * 100}%`;
+    }
+
+    function formatScore(score) {
+      return score.toFixed(1);
+    }
+
+    function weightedScore(item) {
+      return (item.taste_score * 0.45) + (item.healthy_score * 0.30) + (item.price_score * 0.25);
+    }
+
+    function applyFilters(data) {
+      return data
+        .filter((item) =>
+          item.healthy_score >= filters.healthy &&
+          item.price_score >= filters.price &&
+          item.taste_score >= filters.taste &&
+          (
+            filters.genres.size === 0 ||
+            item.genre.some((genre) => filters.genres.has(genre))
+          )
+        )
+        .map((item) => ({ ...item, weighted: weightedScore(item) }))
+        .sort((a, b) => b.weighted - a.weighted || b.taste_score - a.taste_score || b.healthy_score - a.healthy_score);
+    }
+
+    function renderGenreFilters() {
+      genreFilterRow.innerHTML = allGenres.map((genre) => `
+        <button
+          type="button"
+          class="genre-filter-button${filters.genres.has(genre) ? " is-active" : ""}"
+          data-genre="${genre}"
+          aria-pressed="${filters.genres.has(genre) ? "true" : "false"}"
+        >${genre}</button>
+      `).join("");
+
+      genreFilterRow.querySelectorAll("[data-genre]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const genre = button.dataset.genre;
+          if (filters.genres.has(genre)) {
+            filters.genres.delete(genre);
+          } else {
+            filters.genres.add(genre);
+          }
+          render();
+        });
+      });
+    }
+
+    function setSliderLabels() {
+      document.getElementById("healthy-value").textContent = `${filters.healthy}+`;
+      document.getElementById("price-value").textContent = `${filters.price}+`;
+      document.getElementById("taste-value").textContent = `${filters.taste}+`;
+      const selectedGenres = [...filters.genres];
+      const genreSummary = selectedGenres.length === 0
+        ? "ジャンル: すべて"
+        : selectedGenres.length <= 2
+          ? `ジャンル: ${selectedGenres.join(" / ")}`
+          : `ジャンル: ${selectedGenres.length}個選択`;
+      filterToggleSummary.textContent = genreSummary;
+      filterTogglePills.innerHTML = [
+        `<span class="filter-mini-pill">Healthy ${filters.healthy}+</span>`,
+        `<span class="filter-mini-pill">Price ${filters.price}+</span>`,
+        `<span class="filter-mini-pill">Taste ${filters.taste}+</span>`
+      ].join("");
+    }
+
+    function renderCards(data) {
+      const root = document.getElementById("card-grid");
+
+      if (!data.length) {
+        root.innerHTML = `
+          <div class="empty-state">
+            条件に合う店がありません。<br>
+            スライダーを少し下げると候補が戻ります。
+          </div>
+        `;
+        return;
+      }
+
+      root.innerHTML = data.map((item, index) => `
+        <article class="restaurant-card">
+          <div class="card-head">
+            <h3 class="name">${item.name}</h3>
+            <div class="rank">#${index + 1}</div>
+          </div>
+          <div class="chips">
+            ${item.genre.map((genre) => `<span class="chip">${genre}</span>`).join("")}
+          </div>
+          <div class="score-block">
+            <div class="score-row healthy">
+              <span>healthy</span>
+              <div class="track"><span style="width:${scoreWidth(item.healthy_score)}"></span></div>
+              <strong>${item.healthy_score}</strong>
+            </div>
+            <div class="score-row price">
+              <span>price</span>
+              <div class="track"><span style="width:${scoreWidth(item.price_score)}"></span></div>
+              <strong>${item.price_score}</strong>
+            </div>
+            <div class="score-row taste">
+              <span>taste</span>
+              <div class="track"><span style="width:${scoreWidth(item.taste_score)}"></span></div>
+              <strong>${item.taste_score}</strong>
+            </div>
+          </div>
+          <div class="card-foot">
+            <div class="blend">ジャンル: <strong>${item.genre.join(" / ")}</strong></div>
+            <div class="blend">blend <strong>${formatScore(item.weighted)}</strong></div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function render() {
+      renderGenreFilters();
+      setSliderLabels();
+      const filtered = applyFilters(restaurants);
+      renderCards(filtered);
+      updateFilterSpace();
+    }
+
+    function syncFiltersFromInputs() {
+      filters.healthy = Number(healthyInput.value);
+      filters.price = Number(priceInput.value);
+      filters.taste = Number(tasteInput.value);
+      render();
+    }
+
+    [healthyInput, priceInput, tasteInput].forEach((input) => {
+      input.addEventListener("input", syncFiltersFromInputs);
+      input.addEventListener("change", syncFiltersFromInputs);
+    });
+
+    filterToggle.addEventListener("click", () => {
+      const nextCollapsed = !filterPanel.classList.contains("is-collapsed");
+      setFilterCollapsed(nextCollapsed);
+      autoCloseLockedUntil = Date.now() + 500;
+    });
+
+    window.addEventListener("scroll", () => {
+      const currentScrollY = window.scrollY;
+      const movedEnough = Math.abs(currentScrollY - lastScrollY) > 8;
+      const shouldAutoClose =
+        Date.now() > autoCloseLockedUntil &&
+        currentScrollY > lastScrollY &&
+        currentScrollY > 24 &&
+        movedEnough &&
+        !filterPanel.classList.contains("is-collapsed");
+
+      if (shouldAutoClose) {
+        setFilterCollapsed(true);
+      }
+
+      lastScrollY = currentScrollY;
+    }, { passive: true });
+
+    window.addEventListener("resize", updateFilterSpace, { passive: true });
+
+    setFilterCollapsed(true);
+    render();
+  </script>
+</body>
+</html>
