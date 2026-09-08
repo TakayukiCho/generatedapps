@@ -13,6 +13,7 @@ window.RESTAURANTS = [
   { "name": "ウィズグリーン", "genre": ["ヘルシー"], "healthy_score": 5, "price_score": 3, "taste_score": 3 },
   { "name": "チャッピーノ", "genre": ["イタリアン"], "healthy_score": 3, "price_score": 3, "taste_score": 4 },
   { "name": "イタリアン食堂MAS parte oimachi", "genre": ["イタリアン"], "healthy_score": 3, "price_score": 3, "taste_score": 4 },
+  { "name": "Mare & Oyster 大井町トラックス店", "genre": ["洋食"], "healthy_score": 4, "price_score": 2, "taste_score": 4 },
   { "name": "大元", "genre": ["中華"], "healthy_score": 2, "price_score": 5, "taste_score": 5 },
   { "name": "萬来園", "genre": ["中華"], "healthy_score": 2, "price_score": 3, "taste_score": 5 },
   { "name": "広州市場 大井町トラックス店", "genre": ["ラーメン", "中華"], "healthy_score": 2, "price_score": 4, "taste_score": 4 },
